@@ -12,6 +12,12 @@ use Firebase\JWT\JWT;
  * Class VanillaConnect
  */
 class VanillaConnect {
+
+    /**
+     * Name of this library.
+     */
+    const NAME = __CLASS__;
+
     /**
      * Version. Uses semantic versioning.
      * @link http://semver.org/
@@ -165,9 +171,11 @@ class VanillaConnect {
      * Validate the response JWT and fill $this->errors if there is any error.
      *
      * @param string $jwt JSON Web Token (JWT)
+     * @param array $jwtClaim Array that will receive the JWT claim's content on success.
+     * @param array $jwtHeader Array that will receive the JWT header's content on success.
      * @return bool True if the validation was a success, false otherwise.
      */
-    public function validateResponse($jwt) {
+    public function validateResponse($jwt, array &$jwtClaim=[], array &$jwtHeader=[]) {
         $valid = false;
         $this->errors = [];
 
@@ -179,10 +187,13 @@ class VanillaConnect {
 
             if (empty($this->errors)) {
                 $valid = true;
+                $jwtClaim = $payload;
+                $jwtHeader = $header;
             }
         } catch(Exception $e) {
             $this->errors['response_jwt_decode_exception'] = $e->getMessage();
         }
+
 
         return $valid;
     }
@@ -248,13 +259,15 @@ class VanillaConnect {
      * @param array $payload JWT claim.
      */
     private function validateResponseClaim(array $payload) {
-        $missingKeys = array_diff_key(self::JWT_RESPONSE_CLAIM_TEMPLATE, $payload);
-        if (count($missingKeys)) {
-            $this->errors['response_missing_claim_item'] = 'The JWT claim is missing the following item(s): '.implode(', ', $missingKeys);
-            return;
+        if (count($payload) === 1 && isset($payload['errors'])) {
+            $this->errors = $payload['errors'];
+        } else {
+            $missingKeys = array_diff_key(self::JWT_RESPONSE_CLAIM_TEMPLATE, $payload);
+            if (count($missingKeys)) {
+                $this->errors['response_missing_claim_item'] = 'The JWT claim is missing the following item(s): '.implode(', ', $missingKeys);
+                return;
+            }
         }
-
-
     }
 
     /**
