@@ -11,7 +11,7 @@ use Firebase\JWT\JWT;
 /**
  * Class VanillaConnect
  */
-abstract class VanillaConnect {
+class VanillaConnect {
     /**
      * Version. Uses semantic versioning.
      * @link http://semver.org/
@@ -104,7 +104,7 @@ abstract class VanillaConnect {
      * @param array $nonce
      * @return string JWT or false on failure.
      */
-    protected function createAuthenticationJWT($nonce) {
+    public function createAuthenticationJWT($nonce) {
         $authHeader = array_merge(
             self::JWT_AUTH_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
@@ -122,7 +122,7 @@ abstract class VanillaConnect {
      * @param array $payload
      * @return string JWT or false on failure.
      */
-    protected function createResponseJWT($nonce, array $payload) {
+    public function createResponseJWT($nonce, array $payload) {
         $responseHeader = array_merge(
             self::JWT_RESPONSE_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
@@ -141,7 +141,7 @@ abstract class VanillaConnect {
      * @param string $jwt JSON Web Token (JWT)
      * @return array|bool The decoded payload or false otherwise.
      */
-    protected function validateAuthentication($jwt) {
+    public function validateAuthentication($jwt) {
         $this->errors = [];
 
         try {
@@ -167,7 +167,7 @@ abstract class VanillaConnect {
      * @param string $jwt JSON Web Token (JWT)
      * @return bool True if the validation was a success, false otherwise.
      */
-    protected function validateResponse($jwt) {
+    public function validateResponse($jwt) {
         $valid = false;
         $this->errors = [];
 

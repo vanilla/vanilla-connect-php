@@ -12,7 +12,9 @@ namespace Vanilla\VanillaConnect;
  *
  * Provider friendly class that does everything you need in one call.
  */
-class VanillaConnectProvider extends VanillaConnect {
+class VanillaConnectProvider {
+
+    private $vanillaConnect;
 
     /**
      * VanillaConnectProvider constructor.
@@ -21,7 +23,7 @@ class VanillaConnectProvider extends VanillaConnect {
      * @param $secret
      */
     public function __construct($clientID, $secret) {
-        parent::__construct($clientID, $secret);
+        $this->vanillaConnect = new VanillaConnect($clientID, $secret);
     }
 
     /**
@@ -32,13 +34,13 @@ class VanillaConnectProvider extends VanillaConnect {
      * @return string JWT
      */
     public function authenticate($authJWT, $resourcePayload) {
-        $authPayload = $this->validateAuthentication($authJWT);
+        $authPayload = $this->vanillaConnect->validateAuthentication($authJWT);
         if (!$authPayload) {
             $responsePayload = ['errors' => $this->getErrors()];
         } else {
             $responsePayload = $resourcePayload;
         }
 
-        return parent::createResponseJWT($authPayload['nonce'], $responsePayload);
+        return $this->vanillaConnect->createResponseJWT($authPayload['nonce'], $responsePayload);
     }
 }
