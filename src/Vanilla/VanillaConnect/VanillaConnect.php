@@ -98,6 +98,30 @@ class VanillaConnect {
     }
 
     /**
+     * Extract the client ID from a JWT.
+     *
+     * @throws Exception
+     * @param string $jwt JSON Web Token
+     *
+     * @return string The client ID.
+     */
+    public static function extractClientID($jwt) {
+        $parts = explode('.', $jwt);
+        if (count($parts) !== 3) {
+            throw new Exception('Wrong number of segments.');
+        }
+        if (($headerObj = JWT::jsonDecode(JWT::urlsafeB64Decode($parts[0]))) === null) {
+            throw new Exception('Invalid header encoding.');
+        }
+        $header = (array)$headerObj;
+        if (!isset($header['azp']) || $header['azp'] === '') {
+            throw new Exception('Client ID is missing from the JWT header.');
+        }
+
+        return $header['azp'];
+    }
+
+    /**
      * Return any errors that occurred after a call to validateAuthentication() or signResponse().
      *
      * @return array
@@ -139,30 +163,6 @@ class VanillaConnect {
         $authPayload['nonce'] = $nonce;
 
         return JWT::encode($authPayload, $this->secret, self::HASHING_ALGORITHM, null, $responseHeader);
-    }
-
-    /**
-     * Get the client ID from a JWT.
-     *
-     * @throws Exception
-     * @param string $jwt JSON Web Token
-     *
-     * @return string The client ID.
-     */
-    public function getClientID($jwt) {
-        $parts = explode('.', $jwt);
-        if (count($parts) !== 3) {
-            throw new Exception('Wrong number of segments.');
-        }
-        if (($headerObj = JWT::jsonDecode(JWT::urlsafeB64Decode($parts[0]))) === null) {
-            throw new Exception('Invalid header encoding.');
-        }
-        $header = (array)$headerObj;
-        if (!isset($header['azp']) || $header['azp'] === '') {
-            throw new Exception('Client ID is missing from the JWT header.');
-        }
-
-        return $header['azp'];
     }
 
     /**
