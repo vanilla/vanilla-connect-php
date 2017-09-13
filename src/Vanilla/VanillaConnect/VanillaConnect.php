@@ -144,7 +144,7 @@ class VanillaConnect {
         $authPayload['exp'] = time() + self::TIMEOUT;
         $authPayload['nonce'] = $nonce;
 
-        return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
+        return JWT::encode($authPayload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
     }
 
     /**
