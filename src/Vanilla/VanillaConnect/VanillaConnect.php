@@ -142,6 +142,30 @@ class VanillaConnect {
     }
 
     /**
+     * Get the client ID from a JWT.
+     *
+     * @throws Exception
+     * @param string $jwt JSON Web Token
+     *
+     * @return string The client ID.
+     */
+    public function getClientID($jwt) {
+        $parts = explode('.', $jwt);
+        if (count($parts) !== 3) {
+            throw new Exception('Wrong number of segments.');
+        }
+        if (($headerObj = JWT::jsonDecode(JWT::urlsafeB64Decode($parts[0]))) === null) {
+            throw new Exception('Invalid header encoding.');
+        }
+        $header = (array)$headerObj;
+        if (!isset($header['azp']) || $header['azp'] === '') {
+            throw new Exception('Client ID is missing from the JWT header.');
+        }
+
+        return $header['azp'];
+    }
+
+    /**
      * Validate the authentication JWT and fill $this->errors if there is any error.
      *
      * @param string $jwt JSON Web Token (JWT)
