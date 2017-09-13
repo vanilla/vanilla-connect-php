@@ -120,7 +120,7 @@ class VanillaConnect {
         $authPayload['exp'] = time() + self::TIMEOUT;
         $authPayload['nonce'] = $nonce;
 
-        JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
+        return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
     }
 
     /**
@@ -133,12 +133,12 @@ class VanillaConnect {
             self::JWT_RESPONSE_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
         );
-        $authPayload = array_merge(JWT_RESPONSE_CLAIM_TEMPLATE, $payload);
+        $authPayload = array_merge(self::JWT_RESPONSE_CLAIM_TEMPLATE, $payload);
         $authPayload['iat'] = time();
         $authPayload['exp'] = time() + self::TIMEOUT;
         $authPayload['nonce'] = $nonce;
 
-        JWT::encode($authPayload, $this->secret, self::HASHING_ALGORITHM, null, $responseHeader);
+        return JWT::encode($authPayload, $this->secret, self::HASHING_ALGORITHM, null, $responseHeader);
     }
 
     /**
@@ -151,8 +151,8 @@ class VanillaConnect {
         $this->errors = [];
 
         try {
-            $payload = JWT::decode($jwt, $this->secret, [self::HASHING_ALGORITHM]);
-            $header = JWT::jsonDecode(JWT::urlsafeB64Decode(explode('.', $jwt[0])));
+            $payload = (array)JWT::decode($jwt, $this->secret, [self::HASHING_ALGORITHM]);
+            $header = (array)JWT::jsonDecode(JWT::urlsafeB64Decode(explode('.', $jwt)[0]));
             $this->validateAuthenticationHeader($header);
             $this->validateAuthenticationClaim($payload);
 
@@ -166,7 +166,6 @@ class VanillaConnect {
         return false;
     }
 
-
     /**
      * Validate the response JWT and fill $this->errors if there is any error.
      *
@@ -175,13 +174,13 @@ class VanillaConnect {
      * @param array $jwtHeader Array that will receive the JWT header's content on success.
      * @return bool True if the validation was a success, false otherwise.
      */
-    public function validateResponse($jwt, &$jwtClaim = [], &$jwtHeader = []) {
+    public function validateResponse($jwt, array &$jwtClaim=[], array &$jwtHeader=[]) {
         $valid = false;
         $this->errors = [];
 
         try {
-            $payload = JWT::decode($jwt, $this->secret, [self::HASHING_ALGORITHM]);
-            $header = JWT::jsonDecode(JWT::urlsafeB64Decode(explode('.', $jwt[0])));
+            $payload = (array)JWT::decode($jwt, $this->secret, [self::HASHING_ALGORITHM]);
+            $header = (array)JWT::jsonDecode(JWT::urlsafeB64Decode(explode('.', $jwt)[0]));
             $this->validateResponseHeader($header);
             $this->validateResponseClaim($payload);
 
@@ -215,9 +214,9 @@ class VanillaConnect {
      * @param array $payload JWT claim.
      */
     private function validateAuthenticationClaim(array $payload) {
-        $missingKeys = array_diff_key(self::JWT_AUTH_CLAIM_TEMPLATE, $payload);
+        $missingKeys = array_keys(array_diff_key(self::JWT_AUTH_CLAIM_TEMPLATE, $payload));
         if (count($missingKeys)) {
-            $this->errors['auth_missing_claim_item'] = 'The JWT claim is missing the following item(s): '.implode(', ', $missingKeys);
+            $this->errors['auth_missing_claim_item'] = 'The authentication JWT claim is missing the following item(s): '.implode(', ', $missingKeys);
             return;
         }
 
@@ -239,9 +238,9 @@ class VanillaConnect {
      * @return bool
      */
     private function validateHeaderFields($payload, $type) {
-        $missingKeys = array_diff_key(constant(VanillaConnectValidator::class.'::JWT_'.strtoupper($type).'_CLAIM_TEMPLATE'), $payload);
+        $missingKeys = array_keys(array_diff_key(constant(VanillaConnect::class.'::JWT_'.strtoupper($type).'_HEADER_TEMPLATE'), $payload));
         if (count($missingKeys)) {
-            $this->errors[$type.'_missing_claim_item'] = 'The JWT claim is missing the following item(s): '.implode(', ', $missingKeys);
+            $this->errors[$type.'_missing_claim_item'] = 'The '.$type.' JWT header is missing the following item(s): '.implode(', ', $missingKeys);
             return false;
         }
 
@@ -262,9 +261,14 @@ class VanillaConnect {
         if (count($payload) === 1 && isset($payload['errors'])) {
             $this->errors = $payload['errors'];
         } else {
-            $missingKeys = array_diff_key(self::JWT_RESPONSE_CLAIM_TEMPLATE, $payload);
+            $missingKeys = array_keys(array_diff_key(self::JWT_RESPONSE_CLAIM_TEMPLATE, $payload));
             if (count($missingKeys)) {
                 $this->errors['response_missing_claim_item'] = 'The JWT claim is missing the following item(s): '.implode(', ', $missingKeys);
+                return;
+            }
+
+            if (!isset($payload['id']) || $payload['id'] === '') {
+                $this->errors['response_empty_claim_id'] = 'The JWT claim\'s field "id" is empty.';
                 return;
             }
         }
