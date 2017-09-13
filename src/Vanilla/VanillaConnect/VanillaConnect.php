@@ -198,7 +198,7 @@ class VanillaConnect {
      * @param array $jwtHeader Array that will receive the JWT header's content on success.
      * @return bool True if the validation was a success, false otherwise.
      */
-    public function validateResponse($jwt, array &$jwtClaim=[], array &$jwtHeader=[]) {
+    public function validateResponse($jwt, &$jwtClaim, &$jwtHeader = []) {
         $valid = false;
         $this->errors = [];
 
