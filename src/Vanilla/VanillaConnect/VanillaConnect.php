@@ -16,7 +16,7 @@ class VanillaConnect {
     /**
      * Name of this library.
      */
-    const NAME = __CLASS__;
+    const NAME = 'VanillaConnect';
 
     /**
      * Version. Uses semantic versioning.
