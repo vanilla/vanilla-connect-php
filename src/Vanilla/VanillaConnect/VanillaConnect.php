@@ -122,6 +122,13 @@ class VanillaConnect {
     }
 
     /**
+     * @return string
+     */
+    public function getClientID() {
+        return $this->clientID;
+    }
+
+    /**
      * Return any errors that occurred after a call to validateAuthentication() or signResponse().
      *
      * @return array
@@ -131,10 +138,17 @@ class VanillaConnect {
     }
 
     /**
+     * @return string
+     */
+    public function getSecret() {
+        return $this->secret();
+    }
+
+    /**
      * @param array $nonce
      * @return string JWT or false on failure.
      */
-    public function createAuthenticationJWT($nonce) {
+    public function createRequestAuthJWT($nonce) {
         $authHeader = array_merge(
             self::JWT_AUTH_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
@@ -144,7 +158,7 @@ class VanillaConnect {
         $authPayload['exp'] = time() + self::TIMEOUT;
         $authPayload['nonce'] = $nonce;
 
-        return JWT::encode($authPayload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
+        return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
     }
 
     /**
@@ -152,7 +166,7 @@ class VanillaConnect {
      * @param array $payload
      * @return string JWT or false on failure.
      */
-    public function createResponseJWT($nonce, array $payload) {
+    public function createResponseAuthJWT($nonce, array $payload) {
         $responseHeader = array_merge(
             self::JWT_RESPONSE_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
@@ -166,19 +180,19 @@ class VanillaConnect {
     }
 
     /**
-     * Validate the authentication JWT and fill $this->errors if there is any error.
+     * Validate the request JWT and fill $this->errors if there is any error.
      *
      * @param string $jwt JSON Web Token (JWT)
      * @return array|bool The decoded payload or false otherwise.
      */
-    public function validateAuthentication($jwt) {
+    public function validateRequest($jwt) {
         $this->errors = [];
 
         try {
             $payload = (array)JWT::decode($jwt, $this->secret, [self::HASHING_ALGORITHM]);
             $header = (array)JWT::jsonDecode(JWT::urlsafeB64Decode(explode('.', $jwt)[0]));
-            $this->validateAuthenticationHeader($header);
-            $this->validateAuthenticationClaim($payload);
+            $this->validateRequestHeader($header);
+            $this->validateRequestClaim($payload);
 
             if (empty($this->errors)) {
                 return $payload;
@@ -198,7 +212,7 @@ class VanillaConnect {
      * @param array $jwtHeader Array that will receive the JWT header's content on success.
      * @return bool True if the validation was a success, false otherwise.
      */
-    public function validateResponse($jwt, &$jwtClaim, &$jwtHeader = []) {
+    public function validateResponse($jwt, array &$jwtClaim=[], array &$jwtHeader=[]) {
         $valid = false;
         $this->errors = [];
 
@@ -226,7 +240,7 @@ class VanillaConnect {
      *
      * @param array $payload JWT header.
      */
-    private function validateAuthenticationHeader(array $payload) {
+    private function validateRequestHeader(array $payload) {
         if (!$this->validateHeaderFields($payload, 'auth')) {
             return;
         }
@@ -237,7 +251,7 @@ class VanillaConnect {
      *
      * @param array $payload JWT claim.
      */
-    private function validateAuthenticationClaim(array $payload) {
+    private function validateRequestClaim(array $payload) {
         $missingKeys = array_keys(array_diff_key(self::JWT_AUTH_CLAIM_TEMPLATE, $payload));
         if (count($missingKeys)) {
             $this->errors['auth_missing_claim_item'] = 'The authentication JWT claim is missing the following item(s): '.implode(', ', $missingKeys);

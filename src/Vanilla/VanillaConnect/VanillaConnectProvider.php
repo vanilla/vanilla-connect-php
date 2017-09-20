@@ -27,7 +27,7 @@ class VanillaConnectProvider {
     }
 
     /**
-     * Create a response JWT from an authentication JWT and some resource data.
+     * Create a response JWT, from an authentication JWT and some resource data, to authenticate a resource.
      *
      * @param $authJWT JWT sent during the authentication request.
      * @param $resourcePayload The data to put in the response JWT's claim. Usually
@@ -41,6 +41,18 @@ class VanillaConnectProvider {
             $responsePayload = $resourcePayload;
         }
 
-        return $this->vanillaConnect->createResponseJWT($authPayload['nonce'], $responsePayload);
+        return $this->vanillaConnect->createResponseAuthJWT($authPayload['nonce'], $responsePayload);
+    }
+
+    /**
+     * Create a response JWT to authenticate a resource.
+     *
+     * @param $resourcePayload The data to put in the response JWT's claim. Usually
+     * @return string JWT
+     */
+    public function sso($resourcePayload) {
+        // Set the audience to sso.
+        $resourcePayload['aud'] = 'sso';
+        return $this->vanillaConnect->createResponseAuthJWT(uniqid('vcrn_'), $resourcePayload);
     }
 }
