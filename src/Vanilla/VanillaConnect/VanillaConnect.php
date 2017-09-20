@@ -129,7 +129,7 @@ class VanillaConnect {
     }
 
     /**
-     * Return any errors that occurred after a call to validateAuthentication() or signResponse().
+     * Return any errors that occurred.
      *
      * @return array
      */
@@ -158,7 +158,7 @@ class VanillaConnect {
         $authPayload['exp'] = time() + self::TIMEOUT;
         $authPayload['nonce'] = $nonce;
 
-        return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
+        return JWT::encode($authPayload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
     }
 
     /**

@@ -34,7 +34,7 @@ class VanillaConnectProvider {
      * @return string JWT
      */
     public function authenticate($authJWT, $resourcePayload) {
-        $authPayload = $this->vanillaConnect->validateAuthentication($authJWT);
+        $authPayload = $this->vanillaConnect->validateRequest($authJWT);
         if (!$authPayload) {
             $responsePayload = ['errors' => $this->getErrors()];
         } else {
