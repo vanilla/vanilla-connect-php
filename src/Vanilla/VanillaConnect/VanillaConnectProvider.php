@@ -14,6 +14,9 @@ namespace Vanilla\VanillaConnect;
  */
 class VanillaConnectProvider {
 
+    /**
+     * @var VanillaConnect
+     */
     private $vanillaConnect;
 
     /**
@@ -30,18 +33,18 @@ class VanillaConnectProvider {
      * Create a response JWT, from an authentication JWT and some resource data, to authenticate a resource.
      *
      * @param $authJWT JWT sent during the authentication request.
-     * @param $resourcePayload The data to put in the response JWT's claim. Usually
+     * @param $claim The data to put as the claim in the the response JWT. Needs to contain id.
      * @return string JWT
      */
-    public function authenticate($authJWT, $resourcePayload) {
-        $authPayload = $this->vanillaConnect->validateRequest($authJWT);
-        if (!$authPayload) {
-            $responsePayload = ['errors' => $this->getErrors()];
+    public function authenticate($authJWT, $claim) {
+        if ($this->vanillaConnect->validateRequest($authJWT, $authClaim)) {
+            $nonce = $authClaim['nonce'];
         } else {
-            $responsePayload = $resourcePayload;
+            $nonce = null;
+            $claim = ['errors' => $this->vanillaConnect->getErrors()];
         }
 
-        return $this->vanillaConnect->createResponseAuthJWT($authPayload['nonce'], $responsePayload);
+        return $this->vanillaConnect->createResponseAuthJWT($nonce, $claim);
     }
 
     /**
