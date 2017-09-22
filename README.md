@@ -27,7 +27,11 @@ if ($signedIn) {
 
 // 4. Generate the VanillaConnect JWT.
 $vanillaConnect = new VanillaConnectProvider($clientID, $secret);
-$jwt = $vanillaConnect->authenticate($_REQUEST['jwt'], $user);
+$jwt = $vanillaConnect->authenticate($_GET['jwt'], $user);
+
+$vanillaConnect->addRedirectUrl('....')
+$vanillaConnect->addRedirectUrl('....')
+$vanillaConnect->redirect($_GET);
 
 // 5. Redirect to your forum with the generated JSON Web Token ($jwt)
 header("Location: https://forum.example.com/api/v2/sso/authenticate/vanilla-connect/$clientID?jwt=$jwt"
