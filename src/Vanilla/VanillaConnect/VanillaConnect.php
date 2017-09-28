@@ -110,15 +110,34 @@ class VanillaConnect {
         if (count($parts) !== 3) {
             throw new Exception('Wrong number of segments.');
         }
-        if (($headerObj = JWT::jsonDecode(JWT::urlsafeB64Decode($parts[0]))) === null) {
+        if (($header = json_decode(JWT::urlsafeB64Decode($parts[0]), true)) === null) {
             throw new Exception('Invalid header encoding.');
         }
-        $header = (array)$headerObj;
         if (!isset($header['azp']) || $header['azp'] === '') {
             throw new Exception('Client ID is missing from the JWT header.');
         }
 
         return $header['azp'];
+    }
+
+    /**
+     * Extract an item from a JWT's claim.
+     *
+     * @throws Exception
+     * @param string $jwt JSON Web Token
+     *
+     * @return mixed The value of the item or null.
+     */
+    public static function extractItemFromClaim($jwt, $item) {
+        $parts = explode('.', $jwt);
+        if (count($parts) !== 3) {
+            throw new Exception('Wrong number of segments.');
+        }
+        if (($claim = json_decode(JWT::urlsafeB64Decode($parts[1]), true)) === null) {
+            throw new Exception('Invalid claim encoding.');
+        }
+
+        return $claim[$item] ?: null;
     }
 
     /**

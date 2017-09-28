@@ -7,12 +7,36 @@
 
 namespace Vanilla\VanillaConnect;
 
+use Exception;
+
 /**
  * Class VanillaConnectProvider
  *
- * Provider friendly class that does everything you need in one call.
+ * Provider friendly class that works with the VanillaConnect plugin.
  */
 class VanillaConnectProvider {
+
+    /**
+     * Regex used to validate the whitelist URLs which can contain wildcards.
+     * It is a pretty loose regex that should enforce what is needed without blocked weird cases.
+     *
+     * One line regex:
+     * /^(?<scheme>(?:https?:)?\/\/)(?:[^\s]+?@)?(?<host>[^\/\s]+)(?<path>\/[^?#\s]*)/
+     *
+     * @var string
+     */
+    protected static $schemeHostPathRegex =
+        '^' // Start of the line
+        .'(?<scheme>(?:https?:)?\/\/)' // Must start with http://, https:// or //
+        .'(?<userpwd>[^\s]+?@)?' // user:password@
+        .'(?<host>[^@\/\s]+)' // We allow pretty much everything until we encounter the path
+        .'(?<path>\/[^?#\s]*)' // The path. / is mandatory but the rest is optional.
+    ;
+
+    /**
+     * @var array
+     */
+    private $allowedWhitelist;
 
     /**
      * @var VanillaConnect
@@ -22,40 +46,151 @@ class VanillaConnectProvider {
     /**
      * VanillaConnectProvider constructor.
      *
-     * @param $clientID
-     * @param $secret
+     * @param string S$clientID
+     * @param string $secret
+     * @param array $redirectURLsWhitelist
      */
-    public function __construct($clientID, $secret) {
+    public function __construct($clientID, $secret, array $redirectURLsWhitelist) {
         $this->vanillaConnect = new VanillaConnect($clientID, $secret);
+        $this->allowedWhitelist = $this->parseWhitelistURLs($redirectURLsWhitelist);
     }
 
     /**
      * Create a response JWT, from an authentication JWT and some resource data, to authenticate a resource.
      *
-     * @param $authJWT JWT sent during the authentication request.
-     * @param $claim The data to put as the claim in the the response JWT. Needs to contain id.
-     * @return string JWT
+     * @param string $requestJWT JWT sent during the authentication request.
+     * @param array $claim The data to put as the claim in the the response JWT. Needs to contain id.
+     * @return string The location to redirect to.
      */
-    public function authenticate($authJWT, $claim) {
-        if ($this->vanillaConnect->validateRequest($authJWT, $authClaim)) {
+    public function authenticate($requestJWT, array $claim) {
+        $errors = [];
+        $redirect = '';
+        if ($this->vanillaConnect->validateRequest($requestJWT, $authClaim)) {
             $nonce = $authClaim['nonce'];
+            if (empty($authClaim['redirect'])) {
+                $errors['request_missing_claim_redirect'] = 'The authentication JWT claim is missing the "redirect" field.';
+            } else {
+                $redirect = $authClaim['redirect'];
+                if (!$this->validateRedirectURL($redirect)) {
+                    $errors['request_invalid_redirect'] = "The redirect URL '$url' is not whitelisted.";
+
+                    $urlEncodingError = false;
+
+                    // Common URL encoding error
+                    if (strpos($redirect, ' ') !== false) {
+                        $urlEncodingError = true;
+                    }
+
+                    if ($urlEncodingError) {
+                        $errors['request_invalid_redirect_tip'] =
+                            "Seems like the redirect URL was not properly encoded. Invalid character detected.";
+                    }
+                }
+            }
         } else {
-            $nonce = null;
-            $claim = ['errors' => $this->vanillaConnect->getErrors()];
+            $errors = $this->vanillaConnect->getErrors();
         }
 
-        return $this->vanillaConnect->createResponseAuthJWT($nonce, $claim);
+        if ($errors) {
+            $nonce = null;
+            $claim = ['errors' => $errors];
+        }
+
+        $responseJWT = $this->vanillaConnect->createResponseAuthJWT($nonce, $claim);
+        return $redirect.(strpos($redirect, '?') === false ? '?' : '&').'jwt='.$responseJWT;
     }
 
     /**
      * Create a response JWT to authenticate a resource.
      *
-     * @param $resourcePayload The data to put in the response JWT's claim. Usually
+     * @param array $resourcePayload The data to put in the response JWT's claim.
      * @return string JWT
      */
-    public function sso($resourcePayload) {
+    public function sso(array $resourcePayload) {
         // Set the audience to sso.
         $resourcePayload['aud'] = 'sso';
         return $this->vanillaConnect->createResponseAuthJWT(uniqid('vcrn_'), $resourcePayload);
+    }
+
+    /**
+     * Validate a redirect URL against the whitelist.
+     *
+     * @param $url
+     * @return bool
+     */
+    protected function validateRedirectURL($url) {
+        $allowed = false;
+
+        foreach ($this->allowedWhitelist as $regex) {
+            if (preg_match($regex, $url) === 1) {
+                $allowed = true;
+                break;
+            }
+        }
+
+        return $allowed;
+    }
+
+    /**
+     * Validate and transform whitelist URLs to regexes.
+     *
+     * @param array $urls
+     * @return array regexes
+     * @throws Exception
+     */
+    protected function parseWhitelistURLs(array $urls) {
+        $regexes = [];
+
+        if (empty($urls)) {
+            throw new Exception('No whitelist URL supplied.');
+        }
+
+        foreach ($urls as $url) {
+            if (preg_match('/'.self::$schemeHostPathRegex.'/', $url, $matches) !== 1) {
+                throw new Exception('Supplied whitelist URL "'.$url.'" does not match "'.self::$schemeHostPathRegex.'"');
+            }
+
+            foreach ($matches as $name => &$match) {
+                if (is_int($name)) {
+                    unset($matches[$name]);
+                    continue;
+                }
+
+                /*
+                 * Disallow wildcards on the domain and TLD.
+                 * This helps preventing something like www.example.* which would allow www.example.com and www.example.net
+                 * but would also allow www.example.domain.evil
+                 * This is not perfect because some TLD have multiple segments (.qc.ca, .me.uk) but, again, this will help.
+                 */
+                if ($name === 'host' && preg_match('#^(?:.*?)([^.@:\s]+\.[^.@:\s]+)(?::\d+)?$#', $match, $hostMatches) === 1) {
+                    if (strpos($hostMatches[1], '*') !== false) {
+                        throw new Exception('Wildcards are disallowed in domain and TLD.');
+                    }
+                }
+
+                // Escape regex characters / . \ + * ? [ ^ ] $ ( ) { } = ! < > | : -
+                $match = preg_quote($match, '/');
+
+                if ($name === 'scheme' && $match === '\/\/') {
+                    $match = '(?:https?:)?\/\/';
+                    continue;
+                }
+
+                // Account for user:password@ that might not be provided.
+                if ($name === 'userpwd' && $match === '') {
+                    $match = '([^\s]+?@)?';
+                    continue;
+                }
+
+                // Replace escaped wildcards
+                if (strpos($match, '*') !== false) {
+                    $match = str_replace('\\*', '[^?#\s]*?', $match);
+                }
+            }
+
+            $regexes[] = '/^'.implode('', $matches).'(?:[?#].*)?$/';
+        }
+
+        return $regexes;
     }
 }
