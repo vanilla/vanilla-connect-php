@@ -138,7 +138,7 @@ class VanillaConnect {
             throw new Exception('Invalid claim encoding.');
         }
 
-        return $claim[$item] ?: null;
+        return isset($claim[$item]) ? $claim[$item] : null;
     }
 
     /**

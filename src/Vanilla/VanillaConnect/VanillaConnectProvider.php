@@ -61,32 +61,34 @@ class VanillaConnectProvider {
      * @param string $requestJWT JWT sent during the authentication request.
      * @param array $claim The data to put as the claim in the the response JWT. Needs to contain id.
      * @return string The URL to redirect to so that the response can be processed.
+     * @throws Exception
      */
     public function createResponseURL($requestJWT, array $claim) {
         $errors = [];
-        $redirect = '';
-        if ($this->vanillaConnect->validateRequest($requestJWT, $authClaim)) {
-            $nonce = $authClaim['nonce'];
-            if (empty($authClaim['redirect'])) {
-                $errors['request_missing_claim_redirect'] = 'The authentication JWT claim is missing the "redirect" field.';
-            } else {
-                $redirect = $authClaim['redirect'];
-                if (!$this->validateRedirectURL($redirect)) {
-                    $errors['request_invalid_redirect'] = "The redirect URL '$url' is not whitelisted.";
 
-                    $urlEncodingError = false;
+        $redirect = VanillaConnect::extractItemFromClaim($requestJWT, 'redirect');
+        if (empty($redirect)) {
+            throw new Exception('The authentication JWT claim is missing the "redirect" field.');
+        } else {
+            if (!$this->validateRedirectURL($redirect)) {
+                $errors['request_invalid_redirect'] = "The redirect URL '$url' is not whitelisted.";
 
-                    // Common URL encoding error
-                    if (strpos($redirect, ' ') !== false) {
-                        $urlEncodingError = true;
-                    }
+                $urlEncodingError = false;
 
-                    if ($urlEncodingError) {
-                        $errors['request_invalid_redirect_tip'] =
-                            "Seems like the redirect URL was not properly encoded. Invalid character detected.";
-                    }
+                // Common URL encoding error
+                if (strpos($redirect, ' ') !== false) {
+                    $urlEncodingError = true;
+                }
+
+                if ($urlEncodingError) {
+                    $errors['request_invalid_redirect_tip'] =
+                        "Seems like the redirect URL was not properly encoded. Invalid character detected.";
                 }
             }
+        }
+
+        if ($this->vanillaConnect->validateRequest($requestJWT, $authClaim)) {
+            $nonce = $authClaim['nonce'];
         } else {
             $errors = $this->vanillaConnect->getErrors();
         }
@@ -188,7 +190,7 @@ class VanillaConnectProvider {
                 }
             }
 
-            $regexes[] = '/^'.implode('', $matches).'(?:[?#].*)?$/';
+            $regexes[] = '/^'.implode('', $matches).'(?:[?#].*)?$/i';
         }
 
         return $regexes;
