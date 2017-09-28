@@ -103,8 +103,8 @@ $whitelist = [];
 // 6. Validate the request and redirect back to the issuer with the response.
 try {
     $vanillaConnect = new VanillaConnectProvider($clientID, $secret, $whitelist);
-    $location = $vanillaConnect->authenticate($jwt, $claim);
-    header("Location: $location");
+    $responseURL = $vanillaConnect->createResponseURL($jwt, $claim);
+    header("Location: $responseURL");
     exit();
 } catch (Exception $e) {
     // Something went wrong.

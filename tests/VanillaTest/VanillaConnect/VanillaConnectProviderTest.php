@@ -62,7 +62,7 @@ class VanillaConnectProviderTest extends TestCase {
         $provider = $this->createProvider();
 
         // This response will contain errors from the authentication request.
-        $location = $provider->authenticate($erroneousRequestJWT, ['id' => uniqid()]);
+        $location = $provider->createResponseURL($erroneousRequestJWT, ['id' => uniqid()]);
         $responseJWT = explode('jwt=', $location)[1];
 
         $this->assertFalse(self::$vanillaConnect->validateResponse($responseJWT));
@@ -199,20 +199,8 @@ class VanillaConnectProviderTest extends TestCase {
     public function testRedirectURLs($whitelistURL, $redirectURL, $isValid) {
         $provider = $this->createProvider([$whitelistURL]);
 
-        $requestJWT = JWT::encode(
-            [
-                'iat' => time(),
-                'exp' => time() + VanillaConnect::TIMEOUT,
-                'nonce' => uniqid(),
-                'redirect' => $redirectURL,
-                'version' => VanillaConnect::VERSION,
-            ],
-            self::$vanillaConnect->getSecret(),
-            VanillaConnect::HASHING_ALGORITHM,
-            null,
-            ['azp' => self::$vanillaConnect->getClientID()]
-        );
-        $location = $provider->authenticate($requestJWT, ['id' => 1]);
+        $requestJWT = self::$vanillaConnect->createRequestAuthJWT(uniqid(), ['redirect' => $redirectURL]);
+        $location = $provider->createResponseURL($requestJWT, ['id' => 1]);
         $responseJWT = explode('jwt=', $location)[1];
 
         $responseError = VanillaConnect::extractItemFromClaim($responseJWT, 'errors');

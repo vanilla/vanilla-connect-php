@@ -56,13 +56,13 @@ class VanillaConnectProvider {
     }
 
     /**
-     * Create a response JWT, from an authentication JWT and some resource data, to authenticate a resource.
+     * Create a response URL, from an authentication JWT and a claim.
      *
      * @param string $requestJWT JWT sent during the authentication request.
      * @param array $claim The data to put as the claim in the the response JWT. Needs to contain id.
-     * @return string The location to redirect to.
+     * @return string The URL to redirect to so that the response can be processed.
      */
-    public function authenticate($requestJWT, array $claim) {
+    public function createResponseURL($requestJWT, array $claim) {
         $errors = [];
         $redirect = '';
         if ($this->vanillaConnect->validateRequest($requestJWT, $authClaim)) {
