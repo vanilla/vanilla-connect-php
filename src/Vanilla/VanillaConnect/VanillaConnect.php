@@ -125,6 +125,7 @@ class VanillaConnect {
      *
      * @throws Exception
      * @param string $jwt JSON Web Token
+     * @param string $item The item to extract from the claim.
      *
      * @return mixed The value of the item or null.
      */
@@ -164,20 +165,23 @@ class VanillaConnect {
     }
 
     /**
-     * @param array $nonce
+     *
+     *
+     * @param string $nonce Nonce token to put in the claim.
+     * @param array $extraClaimItems Any item to add to the claim.
      * @return string JWT or false on failure.
      */
-    public function createRequestAuthJWT($nonce) {
+    public function createRequestAuthJWT($nonce, array $extraClaimItems = []) {
         $authHeader = array_merge(
             self::JWT_REQUEST_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
         );
-        $authPayload = self::JWT_REQUEST_CLAIM_TEMPLATE;
-        $authPayload['iat'] = time();
-        $authPayload['exp'] = time() + self::TIMEOUT;
-        $authPayload['nonce'] = $nonce;
+        $payload = array_merge(self::JWT_REQUEST_CLAIM_TEMPLATE, $extraClaimItems);
+        $payload['iat'] = time();
+        $payload['exp'] = $payload['iat'] + self::TIMEOUT;
+        $payload['nonce'] = $nonce;
 
-        return JWT::encode($authPayload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
+        return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
     }
 
     /**
@@ -190,12 +194,12 @@ class VanillaConnect {
             self::JWT_RESPONSE_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
         );
-        $authPayload = array_merge(self::JWT_RESPONSE_CLAIM_TEMPLATE, $claim);
-        $authPayload['iat'] = time();
-        $authPayload['exp'] = time() + self::TIMEOUT;
-        $authPayload['nonce'] = $nonce;
+        $payload = array_merge(self::JWT_RESPONSE_CLAIM_TEMPLATE, $claim);
+        $payload['iat'] = time();
+        $payload['exp'] = $payload['iat'] + self::TIMEOUT;
+        $payload['nonce'] = $nonce;
 
-        return JWT::encode($authPayload, $this->secret, self::HASHING_ALGORITHM, null, $responseHeader);
+        return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $responseHeader);
     }
 
     /**
