@@ -214,6 +214,7 @@ class VanillaConnectProviderTest extends TestCase {
         return [
             // Pass
             ['//vanilla.dev/', '//vanilla.dev/', true],
+            ['//vanilla.dev/lol', '//VaNiLlA.dEv/LoL', true],
             ['//vanilla.dev/', '//vanilla.dev/?query', true],
             ['//vanilla.dev/', '//vanilla.dev/?query#fragment', true],
             ['//vanilla.dev/', '//user:pwd@vanilla.dev/?query#fragment', true],
