@@ -108,6 +108,15 @@ class VanillaConnectProviderTest extends TestCase {
             'https://*',
             'https://example.com',
             'https://example.com*',
+            // Contains either fragment or query string.
+            'https://example.com/?',
+            'https://example.com/#',
+            'https://example.com/?query=true',
+            'https://example.com/path?query=true',
+            'https://example.com/*?query=true',
+            'https://example.com/?query=true&test',
+            'https://example.com/#fragment',
+            'https://example.com/?query=true#something',
             // Restricted
             'http://www.example.*/',
             'http://www.example.*:80/',

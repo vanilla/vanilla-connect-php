@@ -57,7 +57,7 @@ It is best if you can avoid using wildcards because they weaken the security of 
 Example: `https://forum.yourdomain.com/authenticate/vanilla-connect/1234`.
 
 Notes:
-- The query string and fragment parts of the URLs are not validated.
+- The query string and fragment parts of the URLs are not validated and must not be present in the whitelist URL.
 - The validation is case insensitive.
 
 *For more example check the [Usage example](#usage-exampe) section.*

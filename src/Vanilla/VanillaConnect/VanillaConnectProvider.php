@@ -21,7 +21,7 @@ class VanillaConnectProvider {
      * It is a pretty loose regex that should enforce what is needed without blocked weird cases.
      *
      * One line regex:
-     * /^(?<scheme>(?:https?:)?\/\/)(?:[^\s]+?@)?(?<host>[^\/\s]+)(?<path>\/[^?#\s]*)/
+     * /^(?<scheme>(?:https?:)?\/\/)(?:[^\s]+?@)?(?<host>[^\/\s]+)(?<path>\/[^?#\s]*)$/
      *
      * @var string
      */
@@ -31,6 +31,7 @@ class VanillaConnectProvider {
         .'(?<userpwd>[^\s]+?@)?' // user:password@
         .'(?<host>[^@\/\s]+)' // We allow pretty much everything until we encounter the path
         .'(?<path>\/[^?#\s]*)' // The path. / is mandatory but the rest is optional.
+        .'$'
     ;
 
     /**
