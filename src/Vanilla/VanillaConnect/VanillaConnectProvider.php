@@ -71,7 +71,7 @@ class VanillaConnectProvider {
             throw new Exception('The authentication JWT claim is missing the "redirect" field.');
         } else {
             if (!$this->validateRedirectURL($redirect)) {
-                $errors['request_invalid_redirect'] = "The redirect URL '$url' is not whitelisted.";
+                $errors['request_invalid_redirect'] = "The redirect URL '$redirect' is not whitelisted.";
 
                 $urlEncodingError = false;
 
