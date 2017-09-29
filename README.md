@@ -31,14 +31,14 @@ Usually the response's claim contains the following fields:
 *Everything is optional but "id". "name" and "email" are necessary if you want users to be created automatically on Vanilla's side.*
 
 ### URLs Whitelisting
-YOu 
+ 
 The provider needs to whitelist every URL that can receive a response.
 
 #### Why?
 
-This security measure makes sure that the authentication response is sent to trusted party. 
+This security measure makes sure that the authentication response is sent to a trusted party. 
 When an authentication request is made, the JWT's claim will contain the redirect URL
-to which the authentication response should be sent to. That URL must have been set as "whitelisted" by the provider
+to which the authentication response should be sent to. That URL must have been "whitelisted" by the provider
 otherwise the response's claim will be replaced by an error.
 
 #### How?
@@ -56,7 +56,10 @@ It is best if you can avoid using wildcards because they weaken the security of 
 
 Example: `https://forum.yourdomain.com/authenticate/vanilla-connect/1234`.
 
-*The query string and fragment parts of the URLs are not validated.*
+Notes:
+- The query string and fragment parts of the URLs are not validated.
+- The validation is case insensitive.
+
 *For more example check the [Usage example](#usage-exampe) section.*
 
 ## Usage example
