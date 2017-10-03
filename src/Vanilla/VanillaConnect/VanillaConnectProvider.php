@@ -112,7 +112,7 @@ class VanillaConnectProvider {
     public function createPushSSOJWT(array $resourcePayload) {
         // Set the audience to pushsso.
         $resourcePayload['aud'] = 'pushsso';
-        return $this->vanillaConnect->createResponseAuthJWT(uniqid(VanillaConnect::NAME.'_rv_'), $resourcePayload);
+        return $this->vanillaConnect->createResponseAuthJWT(uniqid(VanillaConnect::NAME.'_rn_'), $resourcePayload);
     }
 
     /**
