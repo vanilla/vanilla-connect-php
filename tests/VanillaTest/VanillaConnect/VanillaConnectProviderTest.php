@@ -73,16 +73,6 @@ class VanillaConnectProviderTest extends TestCase {
     }
 
     /**
-     * Test a provider created with an empty white list.
-     *
-     * @expectedException Exception
-     * @expectedExceptionMessage No whitelist URL supplied.
-     */
-    public function testEmptyWhitelist() {
-        $this->createProvider([]);
-    }
-
-    /**
      * Test a provider containing an invalid whitelisted URL.
      *
      * @dataProvider invalidWhiteListURLProvider

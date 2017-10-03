@@ -104,15 +104,15 @@ class VanillaConnectProvider {
     }
 
     /**
-     * Create a response JWT to authenticate a resource.
+     * Create a JWT that can be used to push the authentication of a resource.
      *
      * @param array $resourcePayload The data to put in the response JWT's claim.
      * @return string JWT
      */
-    public function sso(array $resourcePayload) {
-        // Set the audience to sso.
-        $resourcePayload['aud'] = 'sso';
-        return $this->vanillaConnect->createResponseAuthJWT(uniqid('vcrn_'), $resourcePayload);
+    public function createPushSSOJWT(array $resourcePayload) {
+        // Set the audience to pushsso.
+        $resourcePayload['aud'] = 'pushsso';
+        return $this->vanillaConnect->createResponseAuthJWT(uniqid(VanillaConnect::NAME.'_rv_'), $resourcePayload);
     }
 
     /**
@@ -143,10 +143,6 @@ class VanillaConnectProvider {
      */
     protected function parseWhitelistURLs(array $urls) {
         $regexes = [];
-
-        if (empty($urls)) {
-            throw new Exception('No whitelist URL supplied.');
-        }
 
         foreach ($urls as $url) {
             if (preg_match('/'.self::$schemeHostPathRegex.'/', $url, $matches) !== 1) {
