@@ -324,7 +324,6 @@ class VanillaConnect {
         if (version_compare(explode('.', self::VERSION)[0], explode('.', $claim['version'])[0]) === 1) {
             $this->errors['request_incompatible_version'] = 'The request was issued with version '.$claim['version'].
                 ' but this library needs a client of at least version '.self::VERSION;
-            return;
         }
     }
 
@@ -367,7 +366,6 @@ class VanillaConnect {
 
             if (!isset($claim['id']) || $claim['id'] === '') {
                 $this->errors['response_empty_claim_id'] = 'The JWT claim\'s field "id" is empty.';
-                return;
             }
         }
     }
