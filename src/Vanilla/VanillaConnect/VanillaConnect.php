@@ -6,7 +6,9 @@
  */
 
 namespace Vanilla\VanillaConnect;
+
 use Firebase\JWT\JWT;
+use Exception;
 
 /**
  * Class VanillaConnect
@@ -70,29 +72,35 @@ class VanillaConnect {
     const JWT_RESPONSE_HEADER_TEMPLATE = self::JWT_REQUEST_HEADER_TEMPLATE;
 
     /**
-     * @var String Client identifier.
+     * @var string Client identifier.
      */
     protected $clientID;
 
     /**
-     * List of errors that were encountered during the validation process.
-     *
-     * @var array
+     * @var array List of errors that were encountered during the validation process.
      */
     private $errors = [];
 
     /**
-     * @var String Secret used to hash the JWT.
+     * @var string Secret used to hash the JWT.
      */
     protected $secret;
 
     /**
      * VanillaConnect constructor.
      *
-     * @param $clientID
-     * @param $secret
+     * @throws Exception
+     *
+     * @param string $clientID
+     * @param string $secret
      */
     public function __construct($clientID, $secret) {
+        if (empty($clientID)) {
+            throw new Exception('ClientID cannot be empty.');
+        }
+        if (empty($clientID)) {
+            throw new Exception('Secret cannot be empty.');
+        }
         $this->clientID = $clientID;
         $this->secret = $secret;
     }
@@ -142,6 +150,8 @@ class VanillaConnect {
     }
 
     /**
+     * Get the clientID.
+     *
      * @return string
      */
     public function getClientID() {
@@ -158,6 +168,8 @@ class VanillaConnect {
     }
 
     /**
+     * Get the secret.
+     *
      * @return string
      */
     public function getSecret() {
@@ -165,7 +177,7 @@ class VanillaConnect {
     }
 
     /**
-     *
+     * Create a request authentication JWT.
      *
      * @param string $nonce Nonce token to put in the claim.
      * @param array $extraClaimItems Any item to add to the claim.
@@ -185,6 +197,8 @@ class VanillaConnect {
     }
 
     /**
+     * Create a response authentication JWT.
+     *
      * @param string $nonce
      * @param array $claim
      * @return string JWT or false on failure.
@@ -210,7 +224,7 @@ class VanillaConnect {
      * @param array $jwtHeader Array that will receive the JWT header's content on success.
      * @return array|bool The decoded payload or false otherwise.
      */
-    public function validateRequest($jwt, &$jwtClaim=[], &$jwtHeader=[]) {
+    public function validateRequest($jwt, &$jwtClaim = [], &$jwtHeader = []) {
         $valid = false;
         $this->errors = [];
 
@@ -249,7 +263,7 @@ class VanillaConnect {
      * @param array $jwtHeader Array that will receive the JWT header's content on success.
      * @return bool True if the validation was a success, false otherwise.
      */
-    public function validateResponse($jwt, &$jwtClaim=[], &$jwtHeader=[]) {
+    public function validateResponse($jwt, &$jwtClaim = [], &$jwtHeader = []) {
         $valid = false;
         $this->errors = [];
 
@@ -287,9 +301,7 @@ class VanillaConnect {
      * @param array $claim JWT header.
      */
     private function validateRequestHeader(array $claim) {
-        if (!$this->validateHeaderFields($claim, 'request')) {
-            return;
-        }
+        $this->validateHeaderFields($claim, 'request');
     }
 
     /**
@@ -317,11 +329,13 @@ class VanillaConnect {
     }
 
     /**
-     * @param $claim
-     * @param $type
+     * Validate header's field.
+     *
+     * @param array $claim
+     * @param string $type
      * @return bool
      */
-    private function validateHeaderFields($claim, $type) {
+    private function validateHeaderFields(array $claim, $type) {
         $missingKeys = array_keys(array_diff_key(constant(VanillaConnect::class.'::JWT_'.strtoupper($type).'_HEADER_TEMPLATE'), $claim));
         if (count($missingKeys)) {
             $this->errors[$type.'_missing_header_item'] = 'The '.$type.' JWT header is missing the following item(s): '.implode(', ', $missingKeys);
@@ -344,7 +358,6 @@ class VanillaConnect {
     private function validateResponseClaim(array $claim) {
         if (isset($claim['errors'])) {
             $this->errors = $claim['errors'];
-            return;
         } else {
             $missingKeys = array_keys(array_diff_key(self::JWT_RESPONSE_CLAIM_TEMPLATE, $claim));
             if (count($missingKeys)) {
@@ -365,8 +378,6 @@ class VanillaConnect {
      * @param array $claim JWT claim.
      */
     private function validateResponseHeader(array $claim) {
-        if (!$this->validateHeaderFields($claim, 'response')) {
-            return;
-        }
+        $this->validateHeaderFields($claim, 'response');
     }
 }

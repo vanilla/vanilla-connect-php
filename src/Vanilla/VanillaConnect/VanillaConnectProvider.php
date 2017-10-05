@@ -21,7 +21,7 @@ class VanillaConnectProvider {
      * It is a pretty loose regex that should enforce what is needed without blocked weird cases.
      *
      * One line regex:
-     * /^(?<scheme>(?:https?:)?\/\/)(?:[^\s]+?@)?(?<host>[^\/\s]+)(?<path>\/[^?#\s]*)$/
+     * /^(?<scheme>(?:https?:)?\/\/)(?<userpwd>[^\s]+?@)?(?<host>[^@\/\s]+)(?<path>\/[^?#\s]*)$/
      *
      * @var string
      */
@@ -47,7 +47,7 @@ class VanillaConnectProvider {
     /**
      * VanillaConnectProvider constructor.
      *
-     * @param string S$clientID
+     * @param string $clientID
      * @param string $secret
      * @param array $redirectURLsWhitelist
      */
@@ -83,7 +83,7 @@ class VanillaConnectProvider {
 
                 if ($urlEncodingError) {
                     $errors['request_invalid_redirect_tip'] =
-                        "Seems like the redirect URL was not properly encoded. Invalid character detected.";
+                        'Seems like the redirect URL was not properly encoded. Invalid character detected.';
                 }
             }
         }
@@ -91,7 +91,7 @@ class VanillaConnectProvider {
         if ($this->vanillaConnect->validateRequest($requestJWT, $authClaim)) {
             $nonce = $authClaim['nonce'];
         } else {
-            $errors = $this->vanillaConnect->getErrors();
+            $errors += $this->vanillaConnect->getErrors();
         }
 
         if ($errors) {
