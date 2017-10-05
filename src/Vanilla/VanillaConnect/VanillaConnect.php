@@ -98,7 +98,7 @@ class VanillaConnect {
         if (empty($clientID)) {
             throw new Exception('ClientID cannot be empty.');
         }
-        if (empty($clientID)) {
+        if (empty($secret)) {
             throw new Exception('Secret cannot be empty.');
         }
         $this->clientID = $clientID;
