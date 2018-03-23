@@ -68,7 +68,7 @@ class VanillaConnectProvider {
         $errors = [];
 
         $state = VanillaConnect::extractItemFromClaim($requestJWT, 'state');
-        $redirect = $state['redirect'] ?? null;
+        $redirect = isset($state['redirect']) ? $state['redirect'] : null;
         if (empty($redirect)) {
             throw new Exception('The authentication JWT claim is missing the "redirect" field.');
         } else {
