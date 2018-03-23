@@ -28,13 +28,17 @@ class VanillaConnectRequestTest extends TestCase {
      * Test a valid request.
      */
     public function testRequest() {
-        $nonce = uniqid();
-        $jwt = self::$vanillaConnect->createRequestAuthJWT($nonce);
+        $jti = uniqid();
+        $state = ['a' => 'yay', 'b' => 'yup'];
+        $jwt = self::$vanillaConnect->createRequestAuthJWT($jti, $state);
 
         $this->assertTrue(self::$vanillaConnect->validateRequest($jwt, $claim));
 
         $this->assertTrue(is_array($claim));
-        $this->assertArrayHasKey('nonce', $claim);
-        $this->assertEquals($nonce, $claim['nonce']);
+        $this->assertArrayHasKey('jti', $claim);
+        $this->assertEquals($jti, $claim['jti']);
+
+        $this->assertEquals($state, $claim['state']);
+
     }
 }

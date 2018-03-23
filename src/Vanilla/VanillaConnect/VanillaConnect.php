@@ -63,8 +63,9 @@ class VanillaConnect {
         'id' => null, // (string) Identifier of the resource (usually a user) we want to authenticate.
         'iat' => null, // (Timestamp) Issued At => Time at witch the JWT was created.
         'exp' => null, // (Timestamp) Expires At => Time at witch the JWT will be expired. iat + self::TIMEOUT
+        'errors' => null, // (array) List or errors that happened during the request validation.
         'jti' => null, // (string) JWT ID. Act as a jti.
-        'state' => null, // (string) Contains extra information that have been passed in the request.
+        'state' => null, // (array) Contains extra information that have been passed in the request.
         'version' => self::VERSION, // (string) VanillaConnect version.
     ];
 
@@ -194,7 +195,7 @@ class VanillaConnect {
         $payload['iat'] = time();
         $payload['exp'] = $payload['iat'] + self::TIMEOUT;
         $payload['jti'] = $jti;
-        $payload['state'] = json_encode($state);
+        $payload['state'] = $state;
 
         return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
     }
