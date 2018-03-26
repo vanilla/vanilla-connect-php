@@ -67,7 +67,8 @@ class VanillaConnectProvider {
     public function createResponseURL($requestJWT, array $claim) {
         $errors = [];
 
-        $redirect = VanillaConnect::extractItemFromClaim($requestJWT, 'redirect');
+        $state = VanillaConnect::extractItemFromClaim($requestJWT, 'state');
+        $redirect = isset($state['redirect']) ? $state['redirect'] : null;
         if (empty($redirect)) {
             throw new Exception('The authentication JWT claim is missing the "redirect" field.');
         } else {
@@ -89,7 +90,7 @@ class VanillaConnectProvider {
         }
 
         if ($this->vanillaConnect->validateRequest($requestJWT, $authClaim)) {
-            $nonce = $authClaim['nonce'];
+            $nonce = $authClaim['jti'];
         } else {
             $errors += $this->vanillaConnect->getErrors();
         }

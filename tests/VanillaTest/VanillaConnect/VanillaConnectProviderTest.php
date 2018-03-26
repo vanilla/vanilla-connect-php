@@ -49,8 +49,8 @@ class VanillaConnectProviderTest extends TestCase {
             [
                 'iat' => time(),
                 'exp' => time() + VanillaConnect::TIMEOUT,
-                'nonce' => uniqid(),
-                'redirect' => 'https://vanilla.dev/',
+                'jti' => uniqid(),
+                'state' => ['redirect' => 'https://vanilla.dev/'],
                 // Missing version.
             ],
             self::$vanillaConnect->getSecret(),

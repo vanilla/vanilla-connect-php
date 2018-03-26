@@ -42,7 +42,8 @@ class VanillaConnect {
     const JWT_REQUEST_CLAIM_TEMPLATE = [
         'iat' => null, // (Timestamp) Issued At => Time at witch the JWT was created.
         'exp' => null, // (Timestamp) Expires At => Time at witch the JWT will be expired. iat + self::TIMEOUT
-        'nonce' => null, // (string) Authorized party => client_id
+        'jti' => null, // (string) JWT ID. Act as a jti.
+        'state' => null, // (string) Contains extra information that must be passed back in the response.
         'version' => self::VERSION, // (string) VanillaConnect version.
     ];
 
@@ -62,7 +63,9 @@ class VanillaConnect {
         'id' => null, // (string) Identifier of the resource (usually a user) we want to authenticate.
         'iat' => null, // (Timestamp) Issued At => Time at witch the JWT was created.
         'exp' => null, // (Timestamp) Expires At => Time at witch the JWT will be expired. iat + self::TIMEOUT
-        'nonce' => null, // (string) Authorized party => client_id
+        'errors' => null, // (array) List or errors that happened during the request validation.
+        'jti' => null, // (string) JWT ID. Act as a jti.
+        'state' => null, // (array) Contains extra information that have been passed in the request.
         'version' => self::VERSION, // (string) VanillaConnect version.
     ];
 
@@ -179,19 +182,20 @@ class VanillaConnect {
     /**
      * Create a request authentication JWT.
      *
-     * @param string $nonce Nonce token to put in the claim.
-     * @param array $extraClaimItems Any item to add to the claim.
+     * @param string $jti Nonce token to put in the claim.
+     * @param array $state Any extra items to add to the claim.
      * @return string JWT or false on failure.
      */
-    public function createRequestAuthJWT($nonce, array $extraClaimItems = []) {
+    public function createRequestAuthJWT($jti, array $state = []) {
         $authHeader = array_merge(
             self::JWT_REQUEST_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
         );
-        $payload = array_merge(self::JWT_REQUEST_CLAIM_TEMPLATE, $extraClaimItems);
+        $payload = self::JWT_REQUEST_CLAIM_TEMPLATE;
         $payload['iat'] = time();
         $payload['exp'] = $payload['iat'] + self::TIMEOUT;
-        $payload['nonce'] = $nonce;
+        $payload['jti'] = $jti;
+        $payload['state'] = $state;
 
         return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $authHeader);
     }
@@ -199,19 +203,24 @@ class VanillaConnect {
     /**
      * Create a response authentication JWT.
      *
-     * @param string $nonce
+     * @param string $jti Nonce token to put in the claim.
      * @param array $claim
      * @return string JWT or false on failure.
      */
-    public function createResponseAuthJWT($nonce, array $claim) {
+    public function createResponseAuthJWT($jti, array $claim) {
         $responseHeader = array_merge(
             self::JWT_RESPONSE_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
         );
-        $payload = array_merge(self::JWT_RESPONSE_CLAIM_TEMPLATE, $claim);
+        $validKeys = array_keys(self::JWT_RESPONSE_CLAIM_TEMPLATE);
+        $filteredClaim = array_filter($claim, function($key) use ($validKeys) {
+            return in_array($key, $validKeys);
+        }, ARRAY_FILTER_USE_KEY);
+
+        $payload = array_merge(self::JWT_RESPONSE_CLAIM_TEMPLATE, $filteredClaim);
         $payload['iat'] = time();
         $payload['exp'] = $payload['iat'] + self::TIMEOUT;
-        $payload['nonce'] = $nonce;
+        $payload['jti'] = $jti;
 
         return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $responseHeader);
     }

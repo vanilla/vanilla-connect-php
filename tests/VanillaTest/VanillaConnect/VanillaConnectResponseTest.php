@@ -28,14 +28,14 @@ class VanillaConnectResponseTest extends TestCase {
      * Test a response.
      */
     public function testResponse() {
-        $nonce = uniqid();
+        $jti = uniqid();
         $id = uniqid();
-        $jwt = self::$vanillaConnect->createResponseAuthJWT($nonce, ['id' => $id]);
+        $jwt = self::$vanillaConnect->createResponseAuthJWT($jti, ['id' => $id]);
 
         $this->assertTrue(self::$vanillaConnect->validateResponse($jwt, $claim));
 
         $this->assertTrue(is_array($claim));
-        $this->assertArrayHasKey('nonce', $claim);
-        $this->assertEquals($nonce, $claim['nonce']);
+        $this->assertArrayHasKey('jti', $claim);
+        $this->assertEquals($jti, $claim['jti']);
     }
 }

@@ -54,7 +54,7 @@ class VanillaConnectResponseFailureTest extends TestCase {
      * The for a non supported hash method.
      */
     public function testInvalidHashMethod() {
-        $jwt = JWT::encode(['nonce' => uniqid()], 'TestSecret', 'HS512', null, ['azp' => 'TestClientID']);
+        $jwt = JWT::encode(['jti' => uniqid()], 'TestSecret', 'HS512', null, ['azp' => 'TestClientID']);
 
         $this->assertFalse(self::$vanillaConnect->validateResponse($jwt));
 
