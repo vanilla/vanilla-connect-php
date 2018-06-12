@@ -16,20 +16,15 @@ class VanillaConnectResponseFailureTest extends TestCase {
     /**
      * @var VanillaConnect
      */
-    private static $vanillaConnect;
-
-    /**
-     * {@inheritdoc}
-     */
-    public static function setupBeforeClass() {
-        self::$vanillaConnect = new VanillaConnect('TestClientID', 'TestSecret');
-    }
+    private $vanillaConnect;
 
     /**
      * {@inheritdoc}
      */
     public function setUp() {
         parent::setUp();
+
+        $this->vanillaConnect = new VanillaConnect('TestClientID', 'TestSecret');
 
         JWT::$timestamp = null;
     }
@@ -38,16 +33,16 @@ class VanillaConnectResponseFailureTest extends TestCase {
      * Test for an expired token.
      */
     public function testExpiredJWT() {
-        $jwt = self::$vanillaConnect->createRequestAuthJWT(uniqid());
+        $jwt = $this->vanillaConnect->createRequestAuthJWT(uniqid());
 
         // Do the validation as if we were in the future.
         JWT::$timestamp = time() + VanillaConnect::TIMEOUT;
 
-        $this->assertFalse(self::$vanillaConnect->validateRequest($jwt));
+        $this->assertFalse($this->vanillaConnect->validateRequest($jwt));
 
-        $this->assertArrayHasKey('request_jtw_decode_exception', self::$vanillaConnect->getErrors());
+        $this->assertArrayHasKey('request_jtw_decode_exception', $this->vanillaConnect->getErrors());
 
-        $this->assertContains('Expired token', self::$vanillaConnect->getErrors());
+        $this->assertContains('Expired token', $this->vanillaConnect->getErrors());
     }
 
     /**
@@ -56,36 +51,44 @@ class VanillaConnectResponseFailureTest extends TestCase {
     public function testInvalidHashMethod() {
         $jwt = JWT::encode(['jti' => uniqid()], 'TestSecret', 'HS512', null, ['azp' => 'TestClientID']);
 
-        $this->assertFalse(self::$vanillaConnect->validateResponse($jwt));
+        $this->assertFalse($this->vanillaConnect->validateResponse($jwt));
 
-        $this->assertArrayHasKey('response_jwt_decode_exception', self::$vanillaConnect->getErrors());
+        $this->assertArrayHasKey('response_jwt_decode_exception', $this->vanillaConnect->getErrors());
 
-        $this->assertContains('Algorithm not allowed', self::$vanillaConnect->getErrors());
+        $this->assertContains('Algorithm not allowed', $this->vanillaConnect->getErrors());
     }
 
     /**
      *  Test for an invalid signature.
+     *
+     * @expectedException \Exception
+     * @expectedExceptionMessageRegExp /^Error while building response:/
      */
     public function testInvalidSignature() {
-        $wrongSecret = new VanillaConnect(self::$vanillaConnect->getClientID(), self::$vanillaConnect->getSecret().'1');
-        $jwt = $wrongSecret->createResponseAuthJWT(uniqid(), []);
+        $wrongSecret = new VanillaConnect($this->vanillaConnect->getClientID(), $this->vanillaConnect->getSecret().'1');
 
-        $this->assertFalse(self::$vanillaConnect->validateResponse($jwt));
-
-        $this->assertArrayHasKey('response_jwt_decode_exception', self::$vanillaConnect->getErrors());
-
-        $this->assertContains('Signature verification failed', self::$vanillaConnect->getErrors());
+        $wrongSecret->createResponseAuthJWT(uniqid(), []);
     }
 
     /**
      * Test for a jwt response with a missing 'id' from its claim.
+     *
+     * @expectedException \Exception
+     * @expectedExceptionMessageRegExp /^Error while building response:/
      */
     public function testMissingClaimID() {
-        $jwt = self::$vanillaConnect->createResponseAuthJWT(uniqid(), ['name' => 'joe']);
+        $this->vanillaConnect->createResponseAuthJWT(uniqid(), ['name' => 'joe']);
+    }
 
-        $this->assertFalse(self::$vanillaConnect->validateResponse($jwt));
-
-        $this->assertArrayHasKey('response_empty_claim_id', self::$vanillaConnect->getErrors());
+    /**
+     * Test for a jwt response issued with the wrong client id.
+     *
+     * @expectedException \Exception
+     * @expectedExceptionMessageRegExp /^Error while building response:/
+     */
+    public function testWrongClientID() {
+        $wrongClient = new VanillaConnect($this->vanillaConnect->getClientID().'1', $this->vanillaConnect->getSecret());
+        $wrongClient->createResponseAuthJWT(uniqid(), []);
     }
 
     /**
@@ -94,20 +97,8 @@ class VanillaConnectResponseFailureTest extends TestCase {
     public function testMissingClientID() {
         $jwt = JWT::encode([], 'TestSecret', VanillaConnect::HASHING_ALGORITHM);
 
-        $this->assertFalse(self::$vanillaConnect->validateResponse($jwt));
+        $this->assertFalse($this->vanillaConnect->validateResponse($jwt));
 
-        $this->assertArrayHasKey('response_missing_header_item', self::$vanillaConnect->getErrors());
-    }
-
-    /**
-     * Test for a jwt response issued with the wrong client id.
-     */
-    public function testWrongClientID() {
-        $wrongClient = new VanillaConnect(self::$vanillaConnect->getClientID().'1', self::$vanillaConnect->getSecret());
-        $jwt = $wrongClient->createResponseAuthJWT(uniqid(), []);
-
-        $this->assertFalse(self::$vanillaConnect->validateRequest($jwt));
-
-        $this->assertArrayHasKey('request_client_id_mismatch', self::$vanillaConnect->getErrors());
+        $this->assertArrayHasKey('response_missing_header_item', $this->vanillaConnect->getErrors());
     }
 }

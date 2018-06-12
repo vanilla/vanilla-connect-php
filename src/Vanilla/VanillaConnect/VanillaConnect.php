@@ -205,22 +205,29 @@ class VanillaConnect {
      *
      * @param string $jti Nonce token to put in the claim.
      * @param array $claim
+     *
      * @return string JWT or false on failure.
+     * @throws \Exception
      */
     public function createResponseAuthJWT($jti, array $claim) {
         $responseHeader = array_merge(
             self::JWT_RESPONSE_HEADER_TEMPLATE,
             ['azp' => $this->clientID]
         );
-        $validKeys = array_keys(self::JWT_RESPONSE_CLAIM_TEMPLATE);
-        $filteredClaim = array_filter($claim, function($key) use ($validKeys) {
-            return in_array($key, $validKeys);
-        }, ARRAY_FILTER_USE_KEY);
 
-        $payload = array_merge(self::JWT_RESPONSE_CLAIM_TEMPLATE, $filteredClaim);
+        $payload = array_merge(self::JWT_RESPONSE_CLAIM_TEMPLATE, $claim);
         $payload['iat'] = time();
         $payload['exp'] = $payload['iat'] + self::TIMEOUT;
         $payload['jti'] = $jti;
+        $payload['version'] = self::VERSION;
+
+        if (!isset($payload['errors'])) {
+            $this->validateResponseClaim($payload);
+
+            if ($this->errors) {
+                throw new \Exception('Error while building response: '.print_r($this->errors, true));
+            }
+        }
 
         return JWT::encode($payload, $this->secret, self::HASHING_ALGORITHM, null, $responseHeader);
     }

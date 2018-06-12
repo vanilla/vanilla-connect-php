@@ -15,13 +15,13 @@ class VanillaConnectRequestTest extends TestCase {
     /**
      * @var VanillaConnect
      */
-    private static $vanillaConnect;
+    private $vanillaConnect;
 
     /**
      * {@inheritdoc}
      */
-    public static function setupBeforeClass() {
-        self::$vanillaConnect = new VanillaConnect('TestClientID', 'TestSecret');
+    public function setUp() {
+        $this->vanillaConnect = new VanillaConnect('TestClientID', 'TestSecret');
     }
 
     /**
@@ -30,9 +30,9 @@ class VanillaConnectRequestTest extends TestCase {
     public function testRequest() {
         $jti = uniqid();
         $state = ['a' => 'yay', 'b' => 'yup'];
-        $jwt = self::$vanillaConnect->createRequestAuthJWT($jti, $state);
+        $jwt = $this->vanillaConnect->createRequestAuthJWT($jti, $state);
 
-        $this->assertTrue(self::$vanillaConnect->validateRequest($jwt, $claim));
+        $this->assertTrue($this->vanillaConnect->validateRequest($jwt, $claim));
 
         $this->assertTrue(is_array($claim));
         $this->assertArrayHasKey('jti', $claim);
