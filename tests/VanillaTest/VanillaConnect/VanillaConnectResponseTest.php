@@ -15,13 +15,13 @@ class VanillaConnectResponseTest extends TestCase {
     /**
      * @var VanillaConnect
      */
-    private static $vanillaConnect;
+    private $vanillaConnect;
 
     /**
      * {@inheritdoc}
      */
-    public static function setupBeforeClass() {
-        self::$vanillaConnect = new VanillaConnect('TestClientID', 'TestSecret');
+    public function setUp() {
+        $this->vanillaConnect = new VanillaConnect('TestClientID', 'TestSecret');
     }
 
     /**
@@ -30,12 +30,30 @@ class VanillaConnectResponseTest extends TestCase {
     public function testResponse() {
         $jti = uniqid();
         $id = uniqid();
-        $jwt = self::$vanillaConnect->createResponseAuthJWT($jti, ['id' => $id]);
+        $jwt = $this->vanillaConnect->createResponseAuthJWT($jti, ['id' => $id]);
 
-        $this->assertTrue(self::$vanillaConnect->validateResponse($jwt, $claim));
+        $this->assertTrue($this->vanillaConnect->validateResponse($jwt, $claim));
 
         $this->assertTrue(is_array($claim));
         $this->assertArrayHasKey('jti', $claim);
         $this->assertEquals($jti, $claim['jti']);
+    }
+
+    /**
+     * Test that it is possible to add extra data in the response claim.
+     *
+     * @throws \Exception
+     */
+    public function testExtraInfo() {
+        $jti = uniqid();
+        $id = uniqid();
+        $userData = ['email' => 'test@example.com', 'name' => 'test'];
+        $jwt = $this->vanillaConnect->createResponseAuthJWT($jti, ['id' => $id, 'user' => $userData]);
+
+        $this->assertTrue($this->vanillaConnect->validateResponse($jwt, $claim));
+
+        $extractedUserData = VanillaConnect::extractItemFromClaim($jwt, 'user');
+
+        $this->assertEquals($userData, $extractedUserData);
     }
 }

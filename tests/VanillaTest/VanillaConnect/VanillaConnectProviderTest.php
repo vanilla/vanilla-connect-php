@@ -13,30 +13,35 @@ use Prophecy\Exception\Exception;
 use Vanilla\VanillaConnect\VanillaConnect;
 use Vanilla\VanillaConnect\VanillaConnectProvider;
 
+/**
+ * Class VanillaConnectProviderTest
+ */
 class VanillaConnectProviderTest extends TestCase {
 
     /**
      * @var VanillaConnect
      */
-    private static $vanillaConnect;
+    private $vanillaConnect;
 
     /**
      * {@inheritdoc}
      */
-    public static function setupBeforeClass() {
-        self::$vanillaConnect = new VanillaConnect('TestClientID', 'TestSecret');
+    public function setUp() {
+        $this->vanillaConnect = new VanillaConnect('TestClientID', 'TestSecret');
     }
 
     /**
      * Create a provider.
      *
      * @param array $whiteList
+     *
      * @return VanillaConnectProvider
+     * @throws \Exception
      */
     private function createProvider($whiteList = ['https://vanilla.dev/*']) {
         return new VanillaConnectProvider(
-            self::$vanillaConnect->getClientID(),
-            self::$vanillaConnect->getSecret(),
+            $this->vanillaConnect->getClientID(),
+            $this->vanillaConnect->getSecret(),
             $whiteList
         );
     }
@@ -53,10 +58,10 @@ class VanillaConnectProviderTest extends TestCase {
                 'state' => ['redirect' => 'https://vanilla.dev/'],
                 // Missing version.
             ],
-            self::$vanillaConnect->getSecret(),
+            $this->vanillaConnect->getSecret(),
             VanillaConnect::HASHING_ALGORITHM,
             null,
-            ['azp' => self::$vanillaConnect->getClientID()]
+            ['azp' => $this->vanillaConnect->getClientID()]
         );
 
         $provider = $this->createProvider();
@@ -65,9 +70,9 @@ class VanillaConnectProviderTest extends TestCase {
         $location = $provider->createResponseURL($erroneousRequestJWT, ['id' => uniqid()]);
         $responseJWT = explode('jwt=', $location)[1];
 
-        $this->assertFalse(self::$vanillaConnect->validateResponse($responseJWT));
+        $this->assertFalse($this->vanillaConnect->validateResponse($responseJWT));
 
-        $errors = self::$vanillaConnect->getErrors();
+        $errors = $this->vanillaConnect->getErrors();
         $this->assertTrue(!empty($errors));
         $this->assertArrayHasKey('request_missing_claim_item', $errors);
     }
@@ -77,6 +82,10 @@ class VanillaConnectProviderTest extends TestCase {
      *
      * @dataProvider invalidWhiteListURLProvider
      * @expectedException Exception
+     *
+     * @param $whitelistURL
+     *
+     * @throws \Exception
      */
     public function testInvalidWhitelistURL($whitelistURL) {
         $this->createProvider([$whitelistURL]);
@@ -129,9 +138,14 @@ class VanillaConnectProviderTest extends TestCase {
      * Test a provider containing a valid whitelisted URL.
      *
      * @dataProvider validWhiteListURLProvider
+     *
+     * @param $whitelistURL
+     *
+     * @throws \Exception
      */
     public function testValidWhitelistURL($whitelistURL) {
         $this->createProvider([$whitelistURL]);
+        $this->assertTrue(true);
     }
 
     /**
@@ -194,11 +208,12 @@ class VanillaConnectProviderTest extends TestCase {
      * @param $isValid
      *
      * @dataProvider redirectURLsProvider
+     * @throws \Exception
      */
     public function testRedirectURLs($whitelistURL, $redirectURL, $isValid) {
         $provider = $this->createProvider([$whitelistURL]);
 
-        $requestJWT = self::$vanillaConnect->createRequestAuthJWT(uniqid(), ['redirect' => $redirectURL]);
+        $requestJWT = $this->vanillaConnect->createRequestAuthJWT(uniqid(), ['redirect' => $redirectURL]);
         $location = $provider->createResponseURL($requestJWT, ['id' => 1]);
         $responseJWT = explode('jwt=', $location)[1];
 
@@ -209,6 +224,11 @@ class VanillaConnectProviderTest extends TestCase {
         $this->assertTrue($test);
     }
 
+    /**
+     * Data provider.
+     *
+     * @return array
+     */
     public function redirectURLsProvider() {
         return [
             // Pass

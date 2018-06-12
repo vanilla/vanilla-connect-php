@@ -50,6 +50,8 @@ class VanillaConnectProvider {
      * @param string $clientID
      * @param string $secret
      * @param array $redirectURLsWhitelist
+     *
+     * @throws \Exception
      */
     public function __construct($clientID, $secret, array $redirectURLsWhitelist) {
         $this->vanillaConnect = new VanillaConnect($clientID, $secret);
